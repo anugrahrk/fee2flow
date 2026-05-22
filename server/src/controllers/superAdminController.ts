@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import Organization from '../models/Organization.js';
+import Payment from '../models/Payment.js';
 
 // Create Organization
 export const createOrganization = async (req: Request, res: Response) => {
@@ -119,3 +120,82 @@ export const toggleOrganizationStatus = async (req: Request, res: Response) => {
         res.status(500).json({ message: 'Error updating status', error });
     }
 };
+
+// Delete Organization
+export const deleteOrganization = async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+        const org = await Organization.findByIdAndDelete(id);
+
+        if (!org) {
+            return res.status(404).json({ message: 'Organization not found' });
+        }
+
+        res.json({ message: 'Organization deleted successfully' });
+    } catch (error) {
+        res.status(500).json({ message: 'Error deleting organization', error });
+    }
+};
+
+// Get Recent Transactions (Payments)
+export const getRecentTransactions = async (req: Request, res: Response) => {
+    try {
+        const page = parseInt(req.query.page as string) || 1;
+        const limit = parseInt(req.query.limit as string) || 5;
+        const search = req.query.search as string || '';
+
+        const query: any = {};
+        
+        if (search) {
+            // Search by student email, org name, status, or amount
+            const Student = (await import('../models/Student.js')).default;
+            
+            const orgs = await Organization.find({ orgName: { $regex: search, $options: 'i' } }).select('_id');
+            const orgIds = orgs.map(org => org._id);
+
+            const students = await Student.find({ email: { $regex: search, $options: 'i' } }).select('_id');
+            const studentIds = students.map(s => s._id);
+            
+            const statusMatch = ['pending', 'completed', 'failed'].includes(search.toLowerCase()) ? search.toLowerCase() : null;
+            const amountMatch = !isNaN(Number(search)) ? Number(search) : null;
+
+            const orConditions: any[] = [];
+            if (statusMatch) orConditions.push({ status: statusMatch });
+            if (orgIds.length > 0) orConditions.push({ organizationId: { $in: orgIds } });
+            if (studentIds.length > 0) orConditions.push({ studentId: { $in: studentIds } });
+            if (amountMatch !== null) orConditions.push({ amount: amountMatch });
+
+            if (orConditions.length > 0) {
+                query.$or = orConditions;
+            } else {
+                return res.json({
+                    data: [],
+                    pagination: { total: 0, page, limit, totalPages: 0, startIndex: 0, endIndex: 0 }
+                });
+            }
+        }
+
+        const total = await Payment.countDocuments(query);
+        const payments = await Payment.find(query)
+            .sort({ createdAt: -1 })
+            .skip((page - 1) * limit)
+            .limit(limit)
+            .populate('organizationId', 'orgName email')
+            .populate('studentId', 'studentName email');
+
+        res.json({
+            data: payments,
+            pagination: {
+                total,
+                page,
+                limit,
+                totalPages: Math.ceil(total / limit),
+                startIndex: (page - 1) * limit + 1,
+                endIndex: Math.min(page * limit, total)
+            }
+        });
+    } catch (error) {
+        res.status(500).json({ message: 'Error fetching transactions', error });
+    }
+};
+

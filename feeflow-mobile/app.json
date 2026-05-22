@@ -1,10 +1,10 @@
 {
   "expo": {
-    "name": "feeflow-mobile",
-    "slug": "feeflow-mobile",
+    "name": "fee2flow",
+    "slug": "fee2flow",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/logo.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
@@ -13,7 +13,11 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.anonymous.feeflowmobile",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -21,10 +25,20 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.anonymous.feeflowmobile"
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-secure-store",
+      "expo-web-browser"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "dd876f84-7708-4bc1-8998-70302af04b70"
+      }
     }
   }
 }

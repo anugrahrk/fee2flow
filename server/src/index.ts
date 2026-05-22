@@ -16,8 +16,8 @@ import studentRoutes from './routes/studentRoutes.js';
 config()
 const app = express()
 const corsOptions = {
-    // Replace with your actual frontend URL
-    origin: process.env.CLIENT_URI,
+    // Allow both the web client and mobile app origins
+    origin: true, // Allow all origins during development (mobile app connects from dynamic IPs)
     optionsSuccessStatus: 200
 };
 

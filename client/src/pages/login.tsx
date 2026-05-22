@@ -292,14 +292,14 @@ export default function Login() {
             </div>
           )}
 
-          {step === 'email' && (
+          {/* {step === 'email' && (
             <div className="mt-6 text-center">
               <p className="text-slate-400 text-sm">
                 Don't have an account?{' '}
                 <a href="#" className="text-blue-400 hover:text-blue-300 font-medium transition-colors">Get Started</a>
               </p>
             </div>
-          )}
+          )} */}
         </div>
 
         {/* Footer Security */}
