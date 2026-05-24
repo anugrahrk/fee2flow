@@ -7,7 +7,7 @@ import { useUserStore } from "../store/userStore";
 export default function Login() {
   const { isLoaded: isSignInLoaded, signIn, setActive } = useSignIn();
   const { isLoaded: isSignUpLoaded, signUp } = useSignUp();
-  const { isSignedIn, getToken } = useAuth();
+  const { isSignedIn, getToken, signOut } = useAuth();
   const navigate = useNavigate();
   const { fetchProfile } = useUserStore();
 
@@ -21,23 +21,29 @@ export default function Login() {
     setIsCheckingRole(true);
     try {
       const token = await getToken();
-      if (token) {
-        const role = await fetchProfile(token);
-        if (role === 'super_user') {
-          navigate('/su', { replace: true });
-        } else if (role === 'admin') {
-          navigate('/', { replace: true });
-        } else if (role === 'student' || role === 'user') {
-          navigate('/c', { replace: true });
-        } else {
-          navigate('/c', { replace: true });
+      if (!token) return;
+
+      const role = await fetchProfile(token);
+      if (!role) {
+        const currentError = useUserStore.getState().error;
+        if (currentError) {
+          toast.error(currentError);
+          await signOut();
+          return;
         }
-      } else {
+      }
+
+      if (role === 'super_user') {
+        navigate('/su', { replace: true });
+      } else if (role === 'admin') {
+        navigate('/', { replace: true });
+      } else if (role === 'student' || role === 'user') {
         navigate('/c', { replace: true });
       }
     } catch (error) {
       console.error("Error checking role:", error);
-      navigate('/c', { replace: true });
+      toast.error("Authentication failed. Please try again.");
+      await signOut();
     } finally {
       setIsCheckingRole(false);
     }

@@ -13,7 +13,7 @@ type Props = {
 const AnimatedLinearGradient = Animated.createAnimatedComponent(LinearGradient);
 
 export default function OpeningScreen({ navigation }: Props) {
-    const { isSignedIn, getToken, isLoaded } = useAuth();
+    const { isSignedIn, getToken, isLoaded, signOut } = useAuth();
     const { fetchProfile } = useUserStore();
     const gradientAnim = useRef(new Animated.Value(0)).current;
     const [statusText, setStatusText] = useState('Initializing...');
@@ -60,6 +60,21 @@ export default function OpeningScreen({ navigation }: Props) {
                     hasNavigated.current = true;
 
                     console.log('User role detected:', role);
+
+                    if (!role) {
+                        const currentError = useUserStore.getState().error;
+                        if (currentError) {
+                            console.error('Access Denied:', currentError);
+                            // Call sign out to clear the bad session
+                            try {
+                                await signOut();
+                            } catch (e) {
+                                console.error('Error signing out:', e);
+                            }
+                        }
+                        navigation.replace('Login');
+                        return;
+                    }
 
                     if (role === 'super_user') {
                         navigation.replace('SuperAdminTabs');

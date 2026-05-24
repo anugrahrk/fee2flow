@@ -1,20 +1,28 @@
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
+import { Sora, DM_Sans } from "next/font/google";
 import "./globals.css";
 
-const inter = Inter({
+const sora = Sora({
     subsets: ["latin"],
-    variable: "--font-inter",
+    variable: "--font-sora",
     display: "swap",
+    weight: ["300", "400", "500", "600", "700", "800"],
+});
+
+const dmSans = DM_Sans({
+    subsets: ["latin"],
+    variable: "--font-dm-sans",
+    display: "swap",
+    weight: ["300", "400", "500", "600", "700"],
 });
 
 export const metadata: Metadata = {
-    title: "FeeFlow - Fees, without friction.",
+    title: "Fee2Flow — Fees, without friction.",
     description: "One platform to pay every fee—securely, automatically, on time. Pay tuition centers, institutes, organizations, and authorities—unified.",
     keywords: ["fee payment", "automated payments", "tuition fees", "institutional payments", "recurring payments"],
-    authors: [{ name: "FeeFlow" }],
+    authors: [{ name: "Fee2Flow" }],
     openGraph: {
-        title: "FeeFlow - Fees, without friction.",
+        title: "Fee2Flow — Fees, without friction.",
         description: "One platform to pay every fee—securely, automatically, on time.",
         type: "website",
     },
@@ -33,7 +41,7 @@ export default function RootLayout({
 }>) {
     return (
         <html lang="en" className="scroll-smooth">
-            <body className={`${inter.variable} antialiased`}>
+            <body className={`${sora.variable} ${dmSans.variable} antialiased`}>
                 {children}
             </body>
         </html>

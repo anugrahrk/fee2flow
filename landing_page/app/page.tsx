@@ -4,6 +4,7 @@ import HeroSection from '@/components/sections/HeroSection';
 import SystemActivation from '@/components/sections/SystemActivation';
 import AutomationSection from '@/components/sections/AutomationSection';
 import TrustSection from '@/components/sections/TrustSection';
+import MobileAppSection from '@/components/sections/MobileAppSection';
 import CTASection from '@/components/sections/CTASection';
 
 export default function Home() {
@@ -15,21 +16,24 @@ export default function Home() {
             {/* Scroll-Linked Coin Canvas */}
             <CoinCanvas totalFrames={240} framePrefix="ezgif-frame-" />
 
-            {/* Content Sections - Each section is ~100vh for ~400vh total scroll */}
+            {/* Content Sections */}
             <div className="relative z-10">
-                {/* Hero / Intro (0-15% scroll range) */}
+                {/* Hero / Intro */}
                 <HeroSection />
 
-                {/* System Activation (15-40% scroll range) */}
+                {/* How It Works */}
                 <SystemActivation />
 
-                {/* Automation & Reminders (40-65% scroll range) */}
+                {/* Automation & Reminders */}
                 <AutomationSection />
 
-                {/* Trust, Security & Scale (65-85% scroll range) */}
+                {/* Trust & Security */}
                 <TrustSection />
 
-                {/* Flow State & CTA (85-100% scroll range) */}
+                {/* Mobile App */}
+                <MobileAppSection />
+
+                {/* CTA */}
                 <CTASection />
             </div>
         </main>

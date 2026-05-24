@@ -6,6 +6,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import axios from 'axios';
 import { Search, Plus, User, Calendar, DollarSign, Bell, Edit3, X, LogOut, MessageCircle, MoreVertical, Trash2 } from 'lucide-react-native';
 import { useUserStore } from '../../src/store/userStore';
+import DateTimePicker from '@react-native-community/datetimepicker';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000';
 
@@ -16,7 +17,7 @@ type Props = {
 export default function AdminStudents({ navigation }: Props) {
     const { getToken, signOut } = useAuth();
     const { user } = useUser();
-    const { logout } = useUserStore();
+    const { logout, user: authUser } = useUserStore();
     
     const [profileOpen, setProfileOpen] = useState(false);
     
@@ -32,6 +33,8 @@ export default function AdminStudents({ navigation }: Props) {
     
     const [selectedStudent, setSelectedStudent] = useState<any>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const [showDatePicker, setShowDatePicker] = useState(false);
 
     // Form states
     const [formData, setFormData] = useState({
@@ -110,8 +113,20 @@ export default function AdminStudents({ navigation }: Props) {
     };
 
     const handleSaveStudent = async (isEdit: boolean) => {
-        if (!formData.studentName || !formData.email || !formData.amount) {
-            Alert.alert("Error", "Please fill all required fields (Name, Email, Amount)");
+        if (!formData.studentName || !formData.email || !formData.amount || !formData.feeRecurringDate) {
+            Alert.alert("Error", "Please fill all required fields (Name, Email, Amount, Recurring Date)");
+            return;
+        }
+
+        let parsedDate: string;
+        try {
+            const dateObj = new Date(formData.feeRecurringDate);
+            if (isNaN(dateObj.getTime())) {
+                throw new Error("Invalid date");
+            }
+            parsedDate = dateObj.toISOString();
+        } catch(e) {
+            Alert.alert("Error", "Please enter a valid date format (e.g. 2024-06-01).");
             return;
         }
 
@@ -122,6 +137,7 @@ export default function AdminStudents({ navigation }: Props) {
             
             const payload = {
                 ...formData,
+                feeRecurringDate: parsedDate,
                 amount: Number(formData.amount)
             };
 
@@ -245,8 +261,9 @@ export default function AdminStudents({ navigation }: Props) {
         }
         
         const dueDate = getRecurringDay(selectedStudent.feeRecurringDate);
-        const orgName = selectedStudent.organizationId?.orgName || "our organization";
-        const message = `Hi ${selectedStudent.studentName},\nyour fees for ${orgName} for ${dueDate} is pending please kindly find the attached link and pay through it.`;
+        const orgName = authUser?.orgName || selectedStudent.organizationId?.orgName || user?.firstName || "our organization";
+        const paymentLink = `https://app.fee2flow.in/pay/${selectedStudent._id}`;
+        const message = `Hi ${selectedStudent.studentName},\nyour fees for ${orgName} for ${dueDate} is pending. Please kindly find the attached link and pay through it.\n\nPayment Link: ${paymentLink}`;
         
         // Remove spaces and '+' from phone number for URL
         const cleanPhone = selectedStudent.mobileNumber.replace(/[^0-9]/g, '');
@@ -455,6 +472,33 @@ export default function AdminStudents({ navigation }: Props) {
                                     value={formData.mobileNumber}
                                     onChangeText={(val) => setFormData({...formData, mobileNumber: val})}
                                 />
+                            </View>
+
+                            <View className="mb-4">
+                                <Text className="text-slate-400 text-xs font-bold uppercase mb-2 ml-1">Fee Recurring Date *</Text>
+                                <TouchableOpacity 
+                                    className="bg-[#0b101e] border border-gray-800 p-4 rounded-xl flex-row items-center justify-between"
+                                    onPress={() => setShowDatePicker(true)}
+                                >
+                                    <Text className={formData.feeRecurringDate ? "text-white" : "text-[#475569]"}>
+                                        {formData.feeRecurringDate ? formData.feeRecurringDate.split('T')[0] : "Select Date"}
+                                    </Text>
+                                    <Calendar color="#475569" size={20} />
+                                </TouchableOpacity>
+                                
+                                {showDatePicker && (
+                                    <DateTimePicker
+                                        value={formData.feeRecurringDate ? new Date(formData.feeRecurringDate) : new Date()}
+                                        mode="date"
+                                        display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                                        onChange={(event, selectedDate) => {
+                                            setShowDatePicker(Platform.OS === 'ios');
+                                            if (selectedDate) {
+                                                setFormData({...formData, feeRecurringDate: selectedDate.toISOString()});
+                                            }
+                                        }}
+                                    />
+                                )}
                             </View>
 
                             <View className="mb-6">

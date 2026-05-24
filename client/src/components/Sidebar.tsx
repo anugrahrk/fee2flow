@@ -51,7 +51,7 @@ export default function Sidebar({ isMobileMenuOpen, setIsMobileMenuOpen }: Sideb
                     <div className="flex items-center gap-2">
                         <img src="/feeflow-logo.png" alt="FeeFlow Logo" className="w-10 h-10 object-contain rounded-lg" />
                         <h2 className="text-[#111318] dark:text-white text-xl font-bold leading-tight tracking-[-0.015em]">
-                            FeeFlow
+                            Fee<span className="text-blue-500">2</span>Flow
                         </h2>
                     </div>
                 </div>

@@ -3,6 +3,9 @@ import { createOrder, verifyPaymentSignature } from '../services/razorpayService
 import { getPaymentReceipt } from '../controllers/paymentController.js';
 import Payment from '../models/Payment.js';
 import Student from '../models/Student.js';
+import Organization from '../models/Organization.js';
+import { pushNotification } from '../services/redisService.js';
+import { emitPaymentSuccess } from '../services/socketService.js';
 // import { notifyPayment } from '../services/socketService.js';
 import { verifyToken } from '../middleware/auth.js';
 // Ideally should be authenticated, but webhook might be public with secret check.
@@ -76,9 +79,45 @@ router.post('/verify-payment', async (req, res) => {
             payment.razorpayPaymentId = razorpay_payment_id;
             await payment.save();
 
-            // Notify Admin via Socket (Optional, commented out as per previous code)
-            // const student = await Student.findById(payment.studentId);
-            // ...
+            // 1. Fetch Student & Organization details
+            const student = await Student.findById(payment.studentId);
+            if (student) {
+                const messageText = `${student.studentName} has paid ₹${payment.amount}.`;
+                
+                // 2. Cache notification in Redis
+                const cachedNotification = await pushNotification(student.organizationId.toString(), messageText);
+                
+                // 3. Emit real-time WebSocket notification to Admin room
+                emitPaymentSuccess(student.organizationId.toString(), cachedNotification);
+
+                // 4. Send Mobile Lockscreen Expo Push Notifications
+                const org = await Organization.findById(student.organizationId);
+                if (org && org.pushTokens && org.pushTokens.length > 0) {
+                    const validTokens = org.pushTokens.filter(t => t.startsWith('ExponentPushToken['));
+                    if (validTokens.length > 0) {
+                        try {
+                            await fetch('https://exp.host/--/api/v2/push/send', {
+                                method: 'POST',
+                                headers: {
+                                    'Accept': 'application/json',
+                                    'Accept-encoding': 'gzip, deflate',
+                                    'Content-Type': 'application/json',
+                                },
+                                body: JSON.stringify({
+                                    to: validTokens,
+                                    sound: 'default',
+                                    title: 'Payment Received 💰',
+                                    body: messageText,
+                                    data: { studentId: student._id }
+                                })
+                            });
+                            console.log(`Sent push notifications to ${validTokens.length} devices`);
+                        } catch (pushErr) {
+                            console.error('Error sending Expo push notifications:', pushErr);
+                        }
+                    }
+                }
+            }
 
             res.json({ status: 'success', paymentId: payment._id });
         } else {

@@ -1,10 +1,12 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useState, useEffect } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Image, Modal, Pressable, Alert, Dimensions, Platform, Vibration } from 'react-native';
 import { useAuth, useUser } from '@clerk/clerk-expo';
 import { useFocusEffect } from '@react-navigation/native';
 import axios from 'axios';
 import { LogOut, User, Wallet, TrendingUp, BarChart3, Clock, Send, BellRing } from 'lucide-react-native';
 import { LineChart } from 'react-native-chart-kit';
+import * as Notifications from 'expo-notifications';
+import { io } from 'socket.io-client';
 import { useUserStore } from '../../src/store/userStore';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000';
@@ -17,7 +19,7 @@ type Props = {
 export default function AdminHome({ navigation }: Props) {
     const { getToken, signOut } = useAuth();
     const { user } = useUser();
-    const { logout } = useUserStore();
+    const { logout, user: authUser } = useUserStore();
 
     const [profileOpen, setProfileOpen] = useState(false);
     const [loading, setLoading] = useState(true);
@@ -31,6 +33,90 @@ export default function AdminHome({ navigation }: Props) {
     const [isReminderModalOpen, setIsReminderModalOpen] = useState(false);
     const [isSendingReminders, setIsSendingReminders] = useState(false);
     const [tooltipPos, setTooltipPos] = useState<any>(null);
+
+    // Register push token and connect Socket
+    useEffect(() => {
+        let socket: any;
+
+        const setupNotificationsAndSocket = async () => {
+            try {
+                const token = await getToken();
+                const headers = { Authorization: `Bearer ${token}` };
+
+                // 1. Request Push Notification permissions & Get Token
+                const pushToken = await registerForPushNotifications();
+                if (pushToken) {
+                    // Send to backend
+                    await axios.post(`${API_URL}/api/admin/push-token`, { pushToken }, { headers });
+                    console.log('Push token successfully registered with backend');
+                }
+
+                // 2. Setup Socket.IO connection for real-time foreground alerts
+                const orgId = authUser?._id || authUser?.organizationId;
+                if (orgId) {
+                    socket = io(API_URL);
+                    
+                    socket.on('connect', () => {
+                        socket.emit('join_org', orgId.toString());
+                    });
+
+                    socket.on('payment_success', async (newNotification: any) => {
+                        // Trigger local native heads-up/lockscreen notification
+                        await Notifications.scheduleNotificationAsync({
+                            content: {
+                                title: 'Payment Received 💰',
+                                body: newNotification.message,
+                                sound: 'default',
+                            },
+                            trigger: null,
+                        });
+                    });
+                }
+            } catch (err) {
+                console.error('Error setting up notifications / socket:', err);
+            }
+        };
+
+        setupNotificationsAndSocket();
+
+        return () => {
+            if (socket) {
+                socket.disconnect();
+            }
+        };
+    }, [authUser]);
+
+    const registerForPushNotifications = async () => {
+        try {
+            if (Platform.OS === 'android') {
+                await Notifications.setNotificationChannelAsync('default', {
+                    name: 'default',
+                    importance: Notifications.AndroidImportance.MAX,
+                    vibrationPattern: [0, 250, 250, 250],
+                    lightColor: '#FF231F7C',
+                });
+            }
+
+            const { status: existingStatus } = await Notifications.getPermissionsAsync();
+            let finalStatus = existingStatus;
+            if (existingStatus !== 'granted') {
+                const { status } = await Notifications.requestPermissionsAsync();
+                finalStatus = status;
+            }
+            if (finalStatus !== 'granted') {
+                console.log('Permission not granted for push notifications');
+                return null;
+            }
+
+            const tokenData = await Notifications.getExpoPushTokenAsync({
+                projectId: 'dd876f84-7708-4bc1-8998-70302af04b70',
+            });
+            return tokenData.data;
+        } catch (err) {
+            console.error('Failed to get Expo push token:', err);
+            return null;
+        }
+    };
 
     useFocusEffect(
         useCallback(() => {

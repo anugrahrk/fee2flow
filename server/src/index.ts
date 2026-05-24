@@ -1,4 +1,6 @@
 import express, { Request, Response } from "express";
+import http from "http";
+import { initSocket } from './services/socketService.js';
 import superAdminRoutes from './routes/superAdminRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
 import { config } from 'dotenv'
@@ -15,6 +17,10 @@ import studentRoutes from './routes/studentRoutes.js';
 
 config()
 const app = express()
+const server = http.createServer(app);
+// Initialize WebSockets
+initSocket(server);
+
 const corsOptions = {
     // Allow both the web client and mobile app origins
     origin: true, // Allow all origins during development (mobile app connects from dynamic IPs)
@@ -62,6 +68,6 @@ app.use('/payments', razorpayRoutes)
 // app.use('/api/admin', adminStatsRoutes); // Admin Stats: /api/admin/stats
 app.use('/api/student', studentRoutes);
 
-app.listen(PORT, () => {
+server.listen(PORT, () => {
     console.log(`Server started at http://localhost:${PORT}`)
 })

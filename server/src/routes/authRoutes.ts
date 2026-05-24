@@ -21,7 +21,8 @@ router.get('/me', verifyToken, assignRole, (req, res) => {
     res.json({
         role: req.role,
         email: primaryEmail,
-        // orgId: req.organizationId // Optional: if you want to send org ID for admins
+        organizationId: req.organizationId,
+        user: req.dbUser
     });
 });
 

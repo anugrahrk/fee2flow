@@ -1,6 +1,10 @@
 import { useState, type Dispatch, type SetStateAction, useRef, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useUser, useClerk } from "@clerk/clerk-react";
+import { io } from 'socket.io-client';
+import { useUserStore } from '../store/userStore';
+import api from '../api/axios';
+import { toast } from 'sonner';
 
 interface NavbarProps {
     setIsMobileMenuOpen?: Dispatch<SetStateAction<boolean>>;
@@ -15,17 +19,72 @@ export default function Navbar({ setIsMobileMenuOpen }: NavbarProps) {
     const location = useLocation();
     const { user } = useUser();
     const { signOut } = useClerk();
+    const { user: dbUser, role } = useUserStore();
 
     const isStudentPage = location.pathname.startsWith('/c') || location.pathname.startsWith('/p');
     const isSuperAdmin = location.pathname.startsWith('/su');
 
-    const mockNotifications = [
-        { id: 1, student: "Alice Johnson", amount: "$500", time: "2 mins ago" },
-        { id: 2, student: "Bob Smith", amount: "$1200", time: "1 hour ago" },
-        { id: 3, student: "Charlie Brown", amount: "$300", time: "3 hours ago" },
-        { id: 4, student: "David Wilson", amount: "$450", time: "5 hours ago" },
-        { id: 5, student: "Eva Davis", amount: "$2200", time: "1 day ago" },
-    ];
+    const [notifications, setNotifications] = useState<any[]>([]);
+    const [hasUnread, setHasUnread] = useState(false);
+
+    // Format time helper
+    const formatTime = (timeStr: string) => {
+        try {
+            const date = new Date(timeStr);
+            const seconds = Math.floor((Date.now() - date.getTime()) / 1000);
+            if (seconds < 60) return 'Just now';
+            const minutes = Math.floor(seconds / 60);
+            if (minutes < 60) return `${minutes}m ago`;
+            const hours = Math.floor(minutes / 60);
+            if (hours < 24) return `${hours}h ago`;
+            return date.toLocaleDateString();
+        } catch {
+            return 'Just now';
+        }
+    };
+
+    // Fetch initial cached notifications on mount / when dbUser is available
+    useEffect(() => {
+        if (role === 'admin' && dbUser) {
+            const fetchInitialNotifications = async () => {
+                try {
+                    const response = await api.get('/api/admin/notifications');
+                    setNotifications(response.data || []);
+                } catch (error) {
+                    console.error("Error fetching notifications history:", error);
+                }
+            };
+            fetchInitialNotifications();
+        }
+    }, [dbUser, role]);
+
+    // WebSocket setup for real-time notifications
+    useEffect(() => {
+        if (role === 'admin' && dbUser) {
+            const orgId = dbUser._id || dbUser.organizationId;
+            if (!orgId) return;
+
+            const SOCKET_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+            const socket = io(SOCKET_URL);
+
+            socket.on('connect', () => {
+                socket.emit('join_org', orgId.toString());
+            });
+
+            socket.on('payment_success', (newNotification: any) => {
+                toast.success(newNotification.message, {
+                    description: 'Keep track of all payments seamlessly',
+                    duration: 5000,
+                });
+                setNotifications((prev) => [newNotification, ...prev].slice(0, 5));
+                setHasUnread(true);
+            });
+
+            return () => {
+                socket.disconnect();
+            };
+        }
+    }, [dbUser, role]);
 
 
 
@@ -58,9 +117,9 @@ export default function Navbar({ setIsMobileMenuOpen }: NavbarProps) {
                 )}
 
                 <div className={`flex items-center gap-2 ${(!isStudentPage && !isSuperAdmin) ? 'md:hidden' : ''}`}>
-                    <img src="/feeflow-logo.png" alt="FeeFlow Logo" className="w-10 h-10 object-contain rounded-lg" />
+                    <img src="/feeflow-logo.png" alt="Fee2Flow Logo" className="w-10 h-10 object-contain rounded-lg" />
                     <h2 className="text-[#111318] dark:text-white text-xl font-bold leading-tight tracking-[-0.015em]">
-                        FeeFlow
+                        Fee<span className="text-blue-500">2</span>Flow
                     </h2>
                 </div>
             </div>
@@ -72,11 +131,14 @@ export default function Navbar({ setIsMobileMenuOpen }: NavbarProps) {
                             onClick={() => {
                                 setIsNotificationsOpen(!isNotificationsOpen);
                                 setIsProfileMenuOpen(false);
+                                setHasUnread(false);
                             }}
                             className="flex items-center justify-center rounded-full size-10 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:text-primary hover:bg-blue-50 dark:hover:bg-slate-700 transition-colors relative"
                         >
                             <span className="material-symbols-outlined text-[20px]">notifications</span>
-                            <span className="absolute top-2 right-2 size-2 bg-red-500 rounded-full border-2 border-white dark:border-[#1a2230]"></span>
+                            {hasUnread && (
+                                <span className="absolute top-2 right-2 size-2 bg-red-500 rounded-full border-2 border-white dark:border-[#1a2230]"></span>
+                            )}
                         </button>
 
                         {isNotificationsOpen && (
@@ -86,17 +148,23 @@ export default function Navbar({ setIsMobileMenuOpen }: NavbarProps) {
                                     <button className="text-xs text-primary hover:underline">Mark all read</button>
                                 </div>
                                 <div className="max-h-[300px] overflow-y-auto">
-                                    {mockNotifications.map((notification) => (
-                                        <div key={notification.id} className="p-4 border-b border-slate-50 dark:border-slate-800/50 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer">
-                                            <div className="flex justify-between items-start mb-1">
-                                                <p className="text-sm font-medium text-[#111318] dark:text-white">Payment Received</p>
-                                                <span className="text-xs text-slate-400">{notification.time}</span>
+                                    {notifications.length > 0 ? (
+                                        notifications.map((notification) => (
+                                            <div key={notification.id} className="p-4 border-b border-slate-50 dark:border-slate-800/50 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer">
+                                                <div className="flex justify-between items-start mb-1">
+                                                    <p className="text-sm font-medium text-[#111318] dark:text-white">Payment Received</p>
+                                                    <span className="text-xs text-slate-400">{formatTime(notification.time)}</span>
+                                                </div>
+                                                <p className="text-sm text-slate-600 dark:text-slate-400">
+                                                    {notification.message}
+                                                </p>
                                             </div>
-                                            <p className="text-sm text-slate-600 dark:text-slate-400">
-                                                <span className="font-medium text-[#111318] dark:text-white">{notification.student}</span> paid <span className="text-green-600 font-medium">{notification.amount}</span>
-                                            </p>
+                                        ))
+                                    ) : (
+                                        <div className="p-8 text-center text-sm text-slate-400">
+                                            No recent notifications
                                         </div>
-                                    ))}
+                                    )}
                                 </div>
                                 <div className="p-3 text-center border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-[#1a2230]">
                                     <button className="text-sm text-primary font-medium hover:underline">See all notifications</button>

@@ -4,7 +4,7 @@ import { useAuth, useUser } from '@clerk/clerk-expo';
 import { useUserStore } from '../../src/store/userStore';
 import { useFocusEffect } from '@react-navigation/native';
 import axios from 'axios';
-import { LogOut, User, Wallet, CheckCircle2 } from 'lucide-react-native';
+import { LogOut, User, Wallet, CheckCircle2, Clock } from 'lucide-react-native';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000';
 
@@ -186,8 +186,7 @@ export default function UserHome({ navigation }: Props) {
                             </View>
                             <View className="flex-1 bg-[#131b2f] rounded-[24px] border border-gray-800 p-5">
                                 <View className="bg-purple-500/20 p-2 rounded-xl self-start mb-4">
-                                    <ActivityIndicator color="#a855f7" size="small" /> 
-                                    {/* using ActivityIndicator icon just as a placeholder for outstanding since we don't have pending_actions */}
+                                    <Clock color="#a855f7" size={20} /> 
                                 </View>
                                 <Text className="text-slate-400 text-[10px] font-bold tracking-widest uppercase mb-1">Outstanding</Text>
                                 <Text className="text-white text-2xl font-bold">₹{outstandingBalance}</Text>

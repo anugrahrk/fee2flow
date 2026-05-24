@@ -1,16 +1,23 @@
 import fs from 'fs';
 import path from 'path';
+import Payment from '../models/Payment.js';
 
 const UPLOAD_DIR = path.join(process.cwd(), 'upload');
 const FILE_AGE_LIMIT = 24 * 60 * 60 * 1000; // 24 hours
+const PAYMENT_STALE_LIMIT = 15 * 60 * 1000; // 15 minutes
 
 export const initCronJobs = () => {
     // Run cleanup immediately on startup
     cleanupOldFiles();
+    cleanupStalePayments();
 
     // Schedule cleanup every hour
     setInterval(cleanupOldFiles, 60 * 60 * 1000);
-    console.log('Cron jobs initialized: File cleanup scheduled.');
+    
+    // Schedule payment cleanup every 5 minutes
+    setInterval(cleanupStalePayments, 5 * 60 * 1000);
+    
+    console.log('Cron jobs initialized: File cleanup and Payment cleanup scheduled.');
 };
 
 const cleanupOldFiles = () => {
@@ -49,5 +56,27 @@ const cleanupOldFiles = () => {
         });
     } catch (error) {
         console.error('Error during file cleanup:', error);
+    }
+};
+
+const cleanupStalePayments = async () => {
+    try {
+        const staleThreshold = new Date(Date.now() - PAYMENT_STALE_LIMIT);
+        
+        const result = await Payment.updateMany(
+            { 
+                status: 'pending', 
+                createdAt: { $lt: staleThreshold } 
+            },
+            { 
+                $set: { status: 'failed' } 
+            }
+        );
+
+        if (result.modifiedCount > 0) {
+            console.log(`[Cron] Marked ${result.modifiedCount} stale pending payments as failed.`);
+        }
+    } catch (error) {
+        console.error('[Cron] Error cleaning up stale payments:', error);
     }
 };

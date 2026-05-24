@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, Image, StatusBar } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, Image, StatusBar, Alert } from 'react-native';
 import { useSignIn, useSignUp, useAuth, useOAuth } from '@clerk/clerk-expo';
 import * as WebBrowser from 'expo-web-browser';
 import { useUserStore } from '../src/store/userStore';
@@ -14,7 +14,7 @@ type Props = {
 export default function LoginScreen({ navigation }: Props) {
     const { isLoaded: isSignInLoaded, signIn, setActive } = useSignIn();
     const { isLoaded: isSignUpLoaded, signUp } = useSignUp();
-    const { getToken, isSignedIn } = useAuth();
+    const { getToken, isSignedIn, signOut } = useAuth();
     const { fetchProfile } = useUserStore();
     const { startOAuthFlow } = useOAuth({ strategy: "oauth_google" });
     
@@ -51,6 +51,16 @@ export default function LoginScreen({ navigation }: Props) {
         setIsLoading(true);
         try {
             const role = await fetchProfile(getToken);
+            
+            if (!role) {
+                const currentError = useUserStore.getState().error;
+                if (currentError) {
+                    Alert.alert("Access Denied", currentError);
+                    await signOut();
+                    return; // Prevent navigation
+                }
+            }
+            
             navigateByRole(role);
         } catch (error) {
             console.error("Error fetching role on redirect", error);
@@ -107,7 +117,16 @@ export default function LoginScreen({ navigation }: Props) {
                 const completeSignUp = await signUp.attemptEmailAddressVerification({ code: otp });
                 if (completeSignUp.status === "complete") {
                     await setActive!({ session: completeSignUp.createdSessionId });
+                    
                     const role = await fetchProfile(getToken);
+                    if (!role) {
+                        const currentError = useUserStore.getState().error;
+                        if (currentError) {
+                            Alert.alert("Access Denied", currentError);
+                            await signOut();
+                            return;
+                        }
+                    }
                     navigateByRole(role);
                     return;
                 }
@@ -118,7 +137,16 @@ export default function LoginScreen({ navigation }: Props) {
                 });
                 if (completeSignIn.status === "complete") {
                     await setActive!({ session: completeSignIn.createdSessionId });
+                    
                     const role = await fetchProfile(getToken);
+                    if (!role) {
+                        const currentError = useUserStore.getState().error;
+                        if (currentError) {
+                            Alert.alert("Access Denied", currentError);
+                            await signOut();
+                            return;
+                        }
+                    }
                     navigateByRole(role);
                     return;
                 }

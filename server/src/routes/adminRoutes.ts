@@ -10,7 +10,9 @@ import {
     getChartData,
     getTransactions,
     sendPaymentReminders,
-    getPendingPaymentsCount
+    getPendingPaymentsCount,
+    getNotifications,
+    savePushToken
 } from '../controllers/adminController.js';
 import { verifyToken, assignRole, requireRole } from '../middleware/auth.js';
 
@@ -32,5 +34,7 @@ router.get('/students/report/pdf', generatePDFReport);
 router.get('/stats/monthly', getMonthlyStats);
 router.get('/stats/chart', getChartData);
 router.get('/transactions', getTransactions);
+router.get('/notifications', getNotifications);
+router.post('/push-token', savePushToken);
 
 export default router;

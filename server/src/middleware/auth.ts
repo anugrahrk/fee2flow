@@ -2,6 +2,7 @@ import { Request, Response, NextFunction, RequestHandler } from 'express';
 import { clerkClient, getAuth } from '@clerk/express';
 import { User } from '@clerk/backend';
 import OrgModel from '../models/Organization.js'; // Your Mongoose User model
+import StudentModel from '../models/Student.js';
 import mongoose from 'mongoose';
 
 declare global {
@@ -10,6 +11,7 @@ declare global {
             clerkUser?: User;
             role?: 'super_user' | 'admin' | 'user';
             organizationId?: mongoose.Types.ObjectId;
+            dbUser?: any;
         }
     }
 }
@@ -49,18 +51,28 @@ export const assignRole = async (req: Request, res: Response, next: NextFunction
     // B. Check Database for Admin or existing User
     try {
         const dbUser = await OrgModel.findOne({ email: primaryEmail });
-        if (dbUser?.isEnabled == false) {
-            return res.status(403).json({ error: "Your account has been disabled." });
-        } else {
-            if (dbUser) {
-                req.role = "admin";
+        if (dbUser) {
+            if (dbUser.isEnabled === false) {
+                return res.status(403).json({ message: "Your access has been blocked. Please contact your admin." });
             }
-            else {
+            req.role = "admin";
+            req.organizationId = dbUser._id as mongoose.Types.ObjectId;
+            req.dbUser = dbUser;
+        } else {
+            const studentUser = await StudentModel.findOne({ email: primaryEmail });
+            if (studentUser) {
+                if (studentUser.isEnabled === false) {
+                    return res.status(403).json({ message: "Your access has been blocked. Please contact your admin." });
+                }
                 req.role = "user";
+                req.organizationId = studentUser.organizationId as mongoose.Types.ObjectId;
+                req.dbUser = studentUser;
+            } else {
+                return res.status(403).json({ message: "You are not registered. Please contact your admin to create your account." });
             }
         }
     } catch (error) {
-        req.role = "user"; // Fallback on DB error
+        return res.status(500).json({ message: "Internal server error during authentication." });
     }
     next();
 };

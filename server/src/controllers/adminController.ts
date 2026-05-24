@@ -5,6 +5,8 @@ import { sendPaymentLink, sendReminder } from '../services/emailService.js';
 import fs from 'fs';
 import path from 'path';
 import PDFDocument from 'pdfkit-table';
+import { getNotifications as fetchRedisNotifications } from '../services/redisService.js';
+import Organization from '../models/Organization.js';
 
 // Create Student
 export const createStudent = async (req: Request, res: Response) => {
@@ -494,5 +496,47 @@ export const getPendingPaymentsCount = async (req: Request, res: Response) => {
     } catch (error) {
         console.error('Error fetching pending count:', error);
         res.status(500).json({ message: 'Error fetching pending count', error });
+    }
+};
+
+// Get Notifications from Redis
+export const getNotifications = async (req: Request, res: Response) => {
+    try {
+        const organizationId = req.organizationId;
+        if (!organizationId) return res.status(403).json({ message: 'Organization ID missing' });
+
+        const notifications = await fetchRedisNotifications(organizationId.toString());
+        res.json(notifications);
+    } catch (error) {
+        console.error('Error fetching cached notifications:', error);
+        res.status(500).json({ message: 'Error fetching notifications', error });
+    }
+};
+
+// Save Push Token for Mobile Lockscreen Notifications
+export const savePushToken = async (req: Request, res: Response) => {
+    try {
+        const organizationId = req.organizationId;
+        if (!organizationId) return res.status(403).json({ message: 'Organization ID missing' });
+
+        const { pushToken } = req.body;
+        if (!pushToken) return res.status(400).json({ message: 'Push token missing' });
+
+        const org = await Organization.findById(organizationId);
+        if (!org) return res.status(404).json({ message: 'Organization not found' });
+
+        // Add if not already present
+        if (!org.pushTokens) {
+            org.pushTokens = [];
+        }
+        if (!org.pushTokens.includes(pushToken)) {
+            org.pushTokens.push(pushToken);
+            await org.save();
+        }
+
+        res.json({ message: 'Push token saved successfully' });
+    } catch (error) {
+        console.error('Error saving push token:', error);
+        res.status(500).json({ message: 'Error saving push token', error });
     }
 };
