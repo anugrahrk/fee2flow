@@ -33,24 +33,7 @@ function BrandLoader({
         >
             {/* Logo mark */}
             <div className="flex flex-col items-center gap-6 mb-12">
-                <div
-                    style={{
-                        width: '56px',
-                        height: '56px',
-                        borderRadius: '16px',
-                        background: 'linear-gradient(135deg, #2563EB 0%, #10B981 100%)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontSize: '22px',
-                        fontWeight: 700,
-                        color: '#fff',
-                        boxShadow: '0 0 40px rgba(37,99,235,0.5)',
-                        animation: 'loaderPulse 2s ease-in-out infinite',
-                    }}
-                >
-                    ₹
-                </div>
+                <img src="assets/logo.png" alt="" className='w-20 h-20' />
                 <span
                     style={{
                         fontFamily: 'var(--font-sora)',
@@ -60,7 +43,7 @@ function BrandLoader({
                         letterSpacing: '-0.01em',
                     }}
                 >
-                    fee<span style={{ color: '#2563EB' }}>2</span>flow
+                    Fee<span style={{ color: '#2563EB' }}>2</span>Flow
                 </span>
             </div>
 
