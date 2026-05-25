@@ -124,39 +124,6 @@ export default function SystemActivation() {
 
                {/* Steps Container */}
                 <div ref={stepsContainerRef} className="relative">
-                    
-                    {/* The Single Continuous Line SVG */}
-                    <svg
-                        className="hidden lg:block absolute"
-                        style={{ 
-                            left: '2.28rem', // Centers exactly behind the icons
-                            top: '2rem', 
-                            width: '2px', 
-                            height: 'calc(100% - 4rem)', // Spans from step 1 to step 3
-                            zIndex: 0 
-                        }}
-                        viewBox="0 0 2 100"
-                        preserveAspectRatio="none"
-                        overflow="visible"
-                    >
-                        {/* 1. Faint background line (the track) */}
-                        <line 
-                            x1="1" y1="0" x2="1" y2="100" 
-                            stroke="rgba(255,255,255,0.06)" 
-                            strokeWidth="2" 
-                            vectorEffect="non-scaling-stroke" 
-                        />
-                        
-                        {/* 2. The pure white animated line */}
-                        <motion.line
-                            x1="1" y1="0" x2="1" y2="100"
-                            stroke="#ffffff"
-                            strokeWidth="2"
-                            style={{ pathLength: smoothProgress }} // Grows from 0 to 1 as you scroll
-                            vectorEffect="non-scaling-stroke"
-                        />
-                    </svg>
-
                     <motion.div
                         variants={containerVariants}
                         initial="hidden"
@@ -167,8 +134,30 @@ export default function SystemActivation() {
                             <motion.div
                                 key={step.number}
                                 variants={stepVariants}
-                                className="flex flex-col lg:flex-row items-start gap-6 lg:gap-12"
+                                className="flex flex-col lg:flex-row items-start gap-6 lg:gap-12 relative"
                             >
+                                {/* Connector Line to next step */}
+                                {index < STEPS.length - 1 && (
+                                    <div 
+                                        className="hidden lg:block absolute"
+                                        style={{
+                                            left: '2.35rem', // Center of 4.7rem icon (4.7/2 = 2.35)
+                                            top: '4.7rem',   // Bottom of the icon
+                                            bottom: '-4rem', // Span across the gap (lg:space-y-16 is 4rem)
+                                            width: '2px',
+                                            background: 'rgba(255,255,255,0.06)',
+                                            zIndex: 0
+                                        }}
+                                    >
+                                        <motion.div 
+                                            className="w-full bg-white origin-top h-full"
+                                            initial={{ scaleY: 0 }}
+                                            animate={{ scaleY: activeStep > index ? 1 : 0 }}
+                                            transition={{ duration: 0.5 }}
+                                        />
+                                    </div>
+                                )}
+
                                 {/* Number circle container */}
                                 <div className="flex-shrink-0 relative z-10">
                                     {/* The Blinking White Ring */}

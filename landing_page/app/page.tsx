@@ -4,7 +4,7 @@ import HeroSection from '@/components/sections/HeroSection';
 import SystemActivation from '@/components/sections/SystemActivation';
 import AutomationSection from '@/components/sections/AutomationSection';
 import TrustSection from '@/components/sections/TrustSection';
-import MobileAppSection from '@/components/sections/MobileAppSection';
+import MobileAppSection from '@/components/sections/Mobileappsection';
 import CTASection from '@/components/sections/CTASection';
 
 export default function Home() {

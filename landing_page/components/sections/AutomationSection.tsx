@@ -55,7 +55,7 @@ function TiltCard({ feature, delay }: { feature: typeof FEATURES[0]; delay: numb
             <div
                 ref={cardRef}
                 onMouseMove={handleMouseMove}
-                onMouseLeave={handleMouseLeave}
+                // onMouseLeave={handleMouseLeave}
                 className="relative p-7 rounded-2xl h-full group"
                 style={{
                     background: 'rgba(255,255,255,0.025)',
@@ -71,6 +71,7 @@ function TiltCard({ feature, delay }: { feature: typeof FEATURES[0]; delay: numb
                     el.style.background = 'rgba(255,255,255,0.04)';
                 }}
                 onMouseLeave={(e) => {
+                    handleMouseLeave()
                     const el = e.currentTarget;
                     el.style.boxShadow = 'none';
                     el.style.borderColor = 'rgba(255,255,255,0.07)';
