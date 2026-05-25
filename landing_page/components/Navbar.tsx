@@ -13,14 +13,13 @@ const NAV_LINKS = [
 ];
 
 export default function Navbar() {
-    const [isVisible, setIsVisible] = useState(false);
+    const [isVisible, setIsVisible] = useState(true);
     const [activeSection, setActiveSection] = useState('');
     const { scrollYProgress } = useScroll();
     const scaleX = useSpring(scrollYProgress, { stiffness: 100, damping: 30, restDelta: 0.001 });
 
     useEffect(() => {
         const handleScroll = () => {
-            setIsVisible(window.scrollY > 80);
 
             // Highlight active section
             const sections = NAV_LINKS.map(l => l.href.replace('#', ''));

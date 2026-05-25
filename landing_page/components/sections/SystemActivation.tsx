@@ -139,14 +139,9 @@ export default function SystemActivation() {
                                 {/* Connector Line to next step */}
                                 {index < STEPS.length - 1 && (
                                     <div 
-                                        className="hidden lg:block absolute"
+                                        className="absolute left-[2.35rem] top-[4.7rem] -bottom-[3rem] lg:-bottom-[4rem] w-[2px] z-0"
                                         style={{
-                                            left: '2.35rem', // Center of 4.7rem icon (4.7/2 = 2.35)
-                                            top: '4.7rem',   // Bottom of the icon
-                                            bottom: '-4rem', // Span across the gap (lg:space-y-16 is 4rem)
-                                            width: '2px',
                                             background: 'rgba(255,255,255,0.06)',
-                                            zIndex: 0
                                         }}
                                     >
                                         <motion.div 

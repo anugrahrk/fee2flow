@@ -46,7 +46,7 @@ const itemVariants = {
 
 export default function HeroSection() {
     const ref = useRef<HTMLDivElement>(null);
-    const isInView = useInView(ref, { once: false, amount: 1 });
+    const isInView = useInView(ref, { once: false, amount: 0.3 });
     const scrambled = useScramble('friction', isInView);
 
     const [wordIndex, setWordIndex] = useState(0);
