@@ -179,7 +179,7 @@ export default function Login() {
         {/* Header */}
         <div className="mb-8 text-center">
           <h1 className="text-3xl font-bold mb-2">
-            Fee <span className="text-blue-500">Flow</span>
+            Fee<span className="text-blue-500">2</span>Flow
           </h1>
           <p className="text-slate-400 text-sm">Frictionless payments for modern institutions.</p>
         </div>

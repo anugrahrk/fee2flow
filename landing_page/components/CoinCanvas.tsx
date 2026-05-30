@@ -267,6 +267,20 @@ export default function CoinCanvas({
                 }}
             />
 
+            {/* Ambient dark overlay to dramatically improve text readability and visual depth */}
+            <div
+                style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    height: '100%',
+                    background: 'radial-gradient(circle at center, rgba(5, 5, 5, 0.5) 0%, rgba(5, 5, 5, 0.85) 100%)',
+                    zIndex: 1,
+                    pointerEvents: 'none',
+                }}
+            />
+
             {/* Scroll indicator */}
             {priorityReady && (
                 <div

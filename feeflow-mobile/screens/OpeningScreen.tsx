@@ -36,7 +36,6 @@ export default function OpeningScreen({ navigation }: Props) {
             ])
         ).start();
     }, []);
-
     // Set the hasSeenOpening flag once
     useEffect(() => {
         AsyncStorage.setItem('hasSeenOpening', 'true').catch(console.error);
@@ -45,6 +44,16 @@ export default function OpeningScreen({ navigation }: Props) {
     // Wait for Clerk to load, THEN check session — this runs every time isLoaded changes
     useEffect(() => {
         if (!isLoaded || hasNavigated.current) return;
+        const checkBackendStatus=()=>{
+            fetch(process.env.EXPO_PUBLIC_API_URL!)
+            .then(() => {
+                setStatusText("Server is live")
+            })
+            .catch(() => {
+                setStatusText('Server failed. try again later');
+            });
+
+        }
 
         const checkSessionAndRedirect = async () => {
             // Small delay for the splash screen visual
@@ -97,7 +106,7 @@ export default function OpeningScreen({ navigation }: Props) {
                 navigation.replace('Login');
             }
         };
-
+        checkBackendStatus()
         checkSessionAndRedirect();
     }, [isLoaded]); // Re-run when isLoaded becomes true
 
