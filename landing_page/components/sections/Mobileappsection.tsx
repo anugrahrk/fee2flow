@@ -3,6 +3,7 @@
 import { motion, useInView, AnimatePresence } from 'framer-motion';
 import { useRef, useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
+import { AiFillAndroid } from "react-icons/ai";
 
 /* ─── QR Code SVG (decorative, replace data with actual QR) ─── */
 function QRCodeSVG() {
@@ -379,6 +380,29 @@ export default function MobileAppSection() {
                                             <rect x="11.5" y="11.5" width="1.5" height="1.5" fill="currentColor"/>
                                         </svg>
                                         Get App via QR
+                                    </motion.button>
+                                    <motion.button
+                                       
+                                        onClick={() => window.open("https://www.dropbox.com/scl/fi/9xvztejwcjicn2w7nuny8/app-release.apk?rlkey=ifbnmlrurhyd83tuw51162psf&st=yhoisd5f&dl=1")}
+                                        className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium"
+                                        style={{
+                                            background: 'rgba(255,255,255,0.04)',
+                                            border: '1px solid rgba(255,255,255,0.1)',
+                                            color: 'rgba(255,255,255,0.55)',
+                                            fontFamily: 'var(--font-dm-sans)',
+                                            transition: 'all 0.2s ease',
+                                        }}
+                                        onMouseEnter={e => {
+                                            (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(16,185,129,0.3)';
+                                            (e.currentTarget as HTMLButtonElement).style.color = '#10B981';
+                                        }}
+                                        onMouseLeave={e => {
+                                            (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(255,255,255,0.1)';
+                                            (e.currentTarget as HTMLButtonElement).style.color = 'rgba(255,255,255,0.55)';
+                                        }}
+                                    >
+                                        <AiFillAndroid />
+                                        Download Android App
                                     </motion.button>
                                 </div>
 
