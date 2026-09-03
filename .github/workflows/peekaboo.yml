@@ -13,24 +13,49 @@ jobs:
         working-directory: ./feeflow-mobile
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 18
+
       - name: Install dependencies
-        working-directory: ./feeflow-mobile
         run: npm install
-      - name: Build iOS
         working-directory: ./feeflow-mobile
-        run: npx expo run:ios --configuration Debug --device simulator
-      - name: Zip .app
+
+      - name: Install Expo CLI
+        run: npm install -g expo-cli @expo/ngrok
         working-directory: ./feeflow-mobile
+
+      - name: Install CocoaPods dependencies
+        run: npx pod-install
+        working-directory: ./feeflow-mobile
+
+      - name: Boot iOS Simulator
         run: |
-          APP=$(find . -name "*.app" -not -path "*/node_modules/*" | head -1)
-          zip -r app.zip "$APP"
-      - name: Upload to Peekaboo
+          xcrun simctl boot "iPhone 15" || true
+          xcrun simctl list devices | grep Booted
+
+      - name: Build for simulator
+        run: |
+          npx expo run:ios --configuration Debug --device simulator
         working-directory: ./feeflow-mobile
+
+      - name: Zip .app artifact
+        run: |
+          APP=$(find ./ios/build -name "*.app" -not -path "*/\.*" | head -1)
+          if [ -z "$APP" ]; then
+            echo "ERROR: No .app found after build"
+            exit 1
+          fi
+          echo "Found app at: $APP"
+          zip -r app.zip "$APP"
+        working-directory: ./feeflow-mobile
+
+      - name: Upload to Peekaboo
         run: |
           curl -X POST ${{ secrets.PEEKABOO_WEBHOOK_URL }} \
             -H "x-peekaboo-secret: ${{ secrets.PEEKABOO_SECRET }}" \
             -F "build_id=${{ github.event.inputs.build_id }}" \
             -F "file=@app.zip"
+        working-directory: ./feeflow-mobile
