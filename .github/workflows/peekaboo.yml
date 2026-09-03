@@ -1,0 +1,37 @@
+name: Peekaboo iOS Build
+on:
+  workflow_dispatch:
+    inputs:
+      build_id:
+        description: 'Peekaboo build ID'
+        required: true
+jobs:
+  build:
+    runs-on: macos-latest
+    defaults:
+      run:
+        working-directory: ./feeflow-mobile
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+      - name: Install dependencies
+        working-directory: ./feeflow-mobile
+        run: npm install
+      - name: Build iOS
+        working-directory: ./feeflow-mobile
+        run: npx expo run:ios --configuration Debug --device simulator
+      - name: Zip .app
+        working-directory: ./feeflow-mobile
+        run: |
+          APP=$(find . -name "*.app" -not -path "*/node_modules/*" | head -1)
+          zip -r app.zip "$APP"
+      - name: Upload to Peekaboo
+        working-directory: ./feeflow-mobile
+        run: |
+          curl -X POST ${{ secrets.PEEKABOO_WEBHOOK_URL }} \
+            -H "x-peekaboo-secret: ${{ secrets.PEEKABOO_SECRET }}" \
+            -F "build_id=${{ github.event.inputs.build_id }}" \
+            -F "file=@app.zip"
