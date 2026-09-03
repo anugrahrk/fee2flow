@@ -17,24 +17,43 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: 20
 
       - name: Install dependencies
         run: npm install
         working-directory: ./feeflow-mobile
 
-      - name: Install Expo CLI
-        run: npm install -g expo-cli @expo/ngrok
+      - name: Install EAS CLI
+        run: npm install -g eas-cli
         working-directory: ./feeflow-mobile
 
-      - name: Install CocoaPods dependencies
-        run: npx pod-install
+      - name: Expo Prebuild (generates ios/ directory)
+        run: npx expo prebuild --platform ios --non-interactive
         working-directory: ./feeflow-mobile
 
       - name: Boot iOS Simulator
         run: |
-          xcrun simctl boot "iPhone 15" || true
-          xcrun simctl list devices | grep Booted
+          SIM_UDID=$(xcrun simctl list devices available -j \
+            | python3 -c "
+          import json,sys
+          data=json.load(sys.stdin)
+          devices=data.get('devices',{})
+          udid=''
+          for runtime,devlist in devices.items():
+              if 'iOS' not in runtime:
+                  continue
+              for d in devlist:
+                  if d.get('isAvailable') and 'iPhone' in d.get('name',''):
+                      udid=d['udid']
+                      print(d['name'])
+                      break
+              if udid:
+                  break
+          print(udid)
+          " | tail -1)
+          echo "Booting simulator UDID: $SIM_UDID"
+          xcrun simctl boot "$SIM_UDID" || true
+          echo "SIM_UDID=$SIM_UDID" >> $GITHUB_ENV
 
       - name: Build for simulator
         run: |
