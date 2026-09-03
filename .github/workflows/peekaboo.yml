@@ -57,7 +57,10 @@ jobs:
 
       - name: Build for simulator
         run: |
-          npx expo run:ios --configuration Debug --device simulator
+          npx expo run:ios \
+            --configuration Debug \
+            --no-bundler \
+            --udid "$SIM_UDID"
         working-directory: ./feeflow-mobile
 
       - name: Zip .app artifact
