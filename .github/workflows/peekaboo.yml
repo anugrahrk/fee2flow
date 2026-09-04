@@ -34,19 +34,27 @@ jobs:
       - name: Build for simulator
         run: |
           WORKSPACE=$(find ./ios -name "*.xcworkspace" -not -path "*/Pods/*" | head -1)
-          # Get the scheme that matches the app name (not Expo internal modules)
-          SCHEME=$(xcodebuild -list -workspace "$WORKSPACE" 2>/dev/null \
-            | awk '/Schemes:/,0' \
-            | grep -v "Schemes:" \
-            | grep -v "EX" \
-            | grep -v "Expo" \
-            | grep -v "React" \
-            | grep -v "RN" \
-            | grep -v "hermes" \
-            | grep -v "Pods" \
-            | xargs \
-            | awk '{print $1}')
-          echo "Detected scheme: $SCHEME"
+          PROJ=$(find ./ios -name "*.xcodeproj" -not -path "*/Pods/*" | head -1)
+          APP_NAME=$(basename "$PROJ" .xcodeproj)
+          
+          # Use explicit scheme from xcodeproj name, or fallback to workspace scheme list
+          SCHEME="$APP_NAME"
+          if [ -z "$SCHEME" ]; then
+            SCHEME=$(xcodebuild -list -workspace "$WORKSPACE" 2>/dev/null \
+              | awk '/Schemes:/,0' \
+              | grep -v "Schemes:" \
+              | grep -v "EX" \
+              | grep -v "FB" \
+              | grep -v "Expo" \
+              | grep -v "React" \
+              | grep -v "RN" \
+              | grep -v "hermes" \
+              | grep -v "Pods" \
+              | xargs \
+              | awk '{print $1}')
+          fi
+          
+          echo "Building workspace: $WORKSPACE with app scheme: $SCHEME"
           xcodebuild \
             -workspace "$WORKSPACE" \
             -scheme "$SCHEME" \
