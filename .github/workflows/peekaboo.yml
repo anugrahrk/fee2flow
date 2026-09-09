@@ -77,13 +77,7 @@ jobs:
           set +a
 
           # Get app name from app.json
-          APP_NAME=$(python3 -c "
-          import json
-          with open('app.json') as f:
-            d = json.load(f)
-          name = d.get('expo',{}).get('name','') or d.get('name','App')
-          print(name.replace(' ',''))
-          " 2>/dev/null || echo "App")
+          APP_NAME=$(python3 -c "import json; d=json.load(open('app.json')); print((d.get('expo',{}).get('name','') or d.get('name','App')).replace(' ',''))" 2>/dev/null || echo "App")
 
           echo "App name: $APP_NAME"
           mkdir -p "ios/$APP_NAME"
@@ -144,13 +138,7 @@ jobs:
             -not -path "*/Pods/*" \
             -not -path "*/.git/*" | head -1)
 
-          APP_NAME=$(python3 -c "
-          import json
-          with open('app.json') as f:
-            d = json.load(f)
-          name = d.get('expo',{}).get('name','') or d.get('name','')
-          print(name.replace(' ',''))
-          " 2>/dev/null || echo "")
+          APP_NAME=$(python3 -c "import json; d=json.load(open('app.json')); print((d.get('expo',{}).get('name','') or d.get('name','')).replace(' ',''))" 2>/dev/null || echo "")
 
           SCHEME=""
           if [ -n "$APP_NAME" ]; then
@@ -221,13 +209,7 @@ jobs:
           echo "Found: $APP"
 
           # Copy pre-built bundle into .app
-          APP_NAME=$(python3 -c "
-          import json
-          with open('app.json') as f:
-            d = json.load(f)
-          name = d.get('expo',{}).get('name','') or d.get('name','App')
-          print(name.replace(' ',''))
-          " 2>/dev/null || echo "App")
+          APP_NAME=$(python3 -c "import json; d=json.load(open('app.json')); print((d.get('expo',{}).get('name','') or d.get('name','App')).replace(' ',''))" 2>/dev/null || echo "App")
 
           BUNDLE="ios/$APP_NAME/main.jsbundle"
           if [ -f "$BUNDLE" ]; then
@@ -258,38 +240,22 @@ jobs:
 
       - name: Get signed upload URL
         run: |
-          # Extract base URL from webhook URL
-          # PEEKABOO_WEBHOOK_URL = https://peekabo-gray.vercel.app/api/webhook/build
-          # Upload URL = https://peekabo-gray.vercel.app/api/upload-url
           WEBHOOK_URL="${{ secrets.PEEKABOO_WEBHOOK_URL }}"
           BASE_URL=$(echo "$WEBHOOK_URL" | sed 's|/api/webhook/build||')
           UPLOAD_URL="$BASE_URL/api/upload-url"
-
           echo "Base URL: $BASE_URL"
           echo "Upload URL: $UPLOAD_URL"
-
           RESPONSE=$(curl -s -X POST "$UPLOAD_URL" \
             -H "x-peekaboo-secret: ${{ secrets.PEEKABOO_SECRET }}" \
             -H "Content-Type: application/json" \
             -d '{"build_id":"${{ github.event.inputs.build_id }}"}')
-
           echo "Response: $RESPONSE"
-
-          SIGNED_URL=$(echo "$RESPONSE" | python3 -c "
-      import json,sys
-      try:
-        data=json.load(sys.stdin)
-        print(data.get('signedUrl',''))
-      except:
-        print('')
-      ")
-
+          SIGNED_URL=$(echo "$RESPONSE" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('signedUrl',''))")
           if [ -z "$SIGNED_URL" ]; then
             echo "ERROR: Could not get signed URL"
             echo "Response was: $RESPONSE"
             exit 1
           fi
-
           echo "✓ Got signed URL"
           echo "SIGNED_URL=$SIGNED_URL" >> $GITHUB_ENV
 
